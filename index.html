@@ -1,26 +1,16 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0">
+<title>AI Speed Camera Pro</title>
 
-<meta name="theme-color"
-      content="#05080d">
-
-<title>Speed Camera</title>
-
-<!-- TensorFlow.js -->
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
-
-<!-- COCO-SSD Object Detection -->
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <style>
-
 *{
     margin:0;
     padding:0;
@@ -28,515 +18,275 @@
 }
 
 body{
-
     background:
-    radial-gradient(
-        circle at 20% 10%,
-        #123c5b,
-        transparent 30%
-    ),
-    radial-gradient(
-        circle at 80% 90%,
-        #35104d,
-        transparent 35%
-    ),
+    radial-gradient(circle at 20% 10%,#123c5b,transparent 30%),
+    radial-gradient(circle at 80% 90%,#35104d,transparent 35%),
     #03060a;
-
     color:white;
-
-    font-family:
-    Arial,
-    "Noto Sans Bengali",
-    sans-serif;
-
-    padding:12px;
-
+    font-family:Arial,"Noto Sans Bengali",sans-serif;
+    padding:10px;
 }
 
-
-/* =========================
-HEADER
-========================= */
-
 .header{
-
     text-align:center;
-
     margin:8px auto 15px;
-
 }
 
 .header h1{
-
     font-size:30px;
-
     font-weight:900;
-
-    background:
-    linear-gradient(
-        90deg,
-        #00eaff,
-        #ffffff,
-        #00ff88
-    );
-
+    background:linear-gradient(90deg,#00eaff,#fff,#00ff88);
     -webkit-background-clip:text;
-
     -webkit-text-fill-color:transparent;
-
 }
 
 .header p{
-
     margin-top:6px;
-
     color:#9aa5b1;
-
     font-size:13px;
-
 }
 
-
-/* =========================
-CAMERA
-========================= */
-
 .cameraBox{
-
     width:100%;
-
-    max-width:950px;
-
+    max-width:1000px;
     margin:auto;
-
     position:relative;
-
     overflow:hidden;
-
-    border-radius:22px;
-
+    border-radius:20px;
     background:#000;
-
-    border:
-    2px solid
-    #26313b;
-
-    box-shadow:
-    0 0 35px
-    rgba(0,220,255,.16);
-
+    border:2px solid #26313b;
+    box-shadow:0 0 35px rgba(0,220,255,.16);
 }
 
 video{
-
     width:100%;
-
-    height:auto;
-
-    min-height:300px;
-
     display:block;
-
     background:#000;
-
     object-fit:cover;
-
 }
 
 canvas{
-
     position:absolute;
-
-    left:0;
-
-    top:0;
-
+    inset:0;
     width:100%;
-
     height:100%;
-
     pointer-events:none;
-
 }
 
-
-/* =========================
-SPEED DISPLAY
-========================= */
-
 .speedDisplay{
-
     position:absolute;
-
-    top:18px;
-
-    right:18px;
-
+    top:15px;
+    right:15px;
     min-width:125px;
-
-    padding:12px;
-
+    padding:10px;
     text-align:center;
-
     border-radius:15px;
-
-    background:
-    rgba(0,0,0,.82);
-
-    border:
-    2px solid
-    #00eaff;
-
-    box-shadow:
-    0 0 20px
-    rgba(0,234,255,.25);
-
+    background:rgba(0,0,0,.82);
+    border:2px solid #00eaff;
 }
 
 .speedNumber{
-
     font-size:34px;
-
     font-weight:900;
-
     color:#00ff88;
-
 }
 
 .speedUnit{
-
-    font-size:13px;
-
+    font-size:12px;
     color:#b8c1ca;
-
 }
 
 .speedState{
-
-    margin-top:4px;
-
+    margin-top:3px;
     font-size:12px;
-
     font-weight:bold;
-
 }
 
-
-/* =========================
-BUTTONS
-========================= */
-
 .controls{
-
     width:100%;
-
-    max-width:950px;
-
+    max-width:1000px;
     margin:14px auto;
-
     display:grid;
-
-    grid-template-columns:
-    1fr 1fr;
-
+    grid-template-columns:1fr 1fr;
     gap:10px;
-
 }
 
 button{
-
     border:0;
-
     padding:15px 8px;
-
     border-radius:14px;
-
     color:white;
-
     font-size:15px;
-
     font-weight:bold;
-
     cursor:pointer;
-
-    background:
-    linear-gradient(
-        135deg,
-        #008cff,
-        #00d9ff
-    );
-
+    background:linear-gradient(135deg,#008cff,#00d9ff);
 }
 
 button:active{
-
     transform:scale(.96);
-
 }
 
 .stop{
-
-    background:
-    linear-gradient(
-        135deg,
-        #ff304f,
-        #d50029
-    );
-
+    background:linear-gradient(135deg,#ff304f,#d50029);
 }
-
-
-/* =========================
-STATUS
-========================= */
 
 .status{
-
     width:100%;
-
-    max-width:950px;
-
+    max-width:1000px;
     margin:10px auto;
-
-    padding:14px;
-
+    padding:13px;
     text-align:center;
-
     border-radius:14px;
-
     background:#10161e;
-
     color:#00eaff;
-
     font-size:14px;
-
 }
 
-
-/* =========================
-SETTINGS
-========================= */
-
 .settings{
-
     width:100%;
-
-    max-width:950px;
-
+    max-width:1000px;
     margin:15px auto;
-
-    padding:18px;
-
+    padding:17px;
     border-radius:18px;
-
-    background:
-    rgba(255,255,255,.045);
-
-    border:
-    1px solid
-    rgba(255,255,255,.08);
-
+    background:rgba(255,255,255,.045);
+    border:1px solid rgba(255,255,255,.08);
 }
 
 .settings h2{
-
     font-size:18px;
-
     margin-bottom:15px;
-
 }
 
 .row{
-
     display:flex;
-
     justify-content:space-between;
-
     align-items:center;
-
     gap:10px;
-
     margin:12px 0;
-
     font-size:14px;
-
     color:#cbd3db;
-
 }
 
 input{
-
     width:110px;
-
-    padding:10px;
-
+    padding:9px;
     border-radius:9px;
-
-    border:
-    1px solid
-    #39434e;
-
+    border:1px solid #39434e;
     background:#05080c;
-
     color:white;
-
     text-align:center;
-
     font-size:15px;
-
     outline:none;
-
 }
 
-
-/* =========================
-VEHICLE INFO
-========================= */
-
-.vehicleInfo{
-
+.vehicleList{
     width:100%;
-
-    max-width:950px;
-
+    max-width:1000px;
     margin:15px auto;
-
-    padding:15px;
-
-    border-radius:16px;
-
-    background:#0d131a;
-
-    border:
-    1px solid
-    rgba(0,234,255,.1);
-
-    line-height:1.8;
-
-    font-size:14px;
-
 }
 
+.vehicleCard{
+    background:#0d131a;
+    border:1px solid rgba(0,234,255,.15);
+    border-radius:14px;
+    padding:13px;
+    margin-bottom:10px;
+}
 
-/* =========================
-DEVELOPER
-========================= */
+.vehicleCard.overspeed{
+    border-color:#ff304f;
+    box-shadow:0 0 15px rgba(255,48,79,.15);
+}
+
+.vehicleTitle{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:8px;
+}
+
+.vehicleName{
+    font-size:17px;
+    font-weight:bold;
+}
+
+.vehicleSpeed{
+    font-size:24px;
+    font-weight:900;
+    color:#00ff88;
+}
+
+.overspeed .vehicleSpeed{
+    color:#ff304f;
+}
+
+.plate{
+    margin-top:7px;
+    padding:8px;
+    background:#05080c;
+    border-radius:8px;
+    color:#ffd84d;
+    font-size:15px;
+    font-weight:bold;
+}
+
+.muted{
+    color:#89939e;
+}
 
 .developer{
-
     width:100%;
-
-    max-width:950px;
-
+    max-width:1000px;
     margin:22px auto;
-
     padding:18px 10px;
-
     text-align:center;
-
-    border-top:
-    1px solid
-    rgba(255,255,255,.08);
-
+    border-top:1px solid rgba(255,255,255,.08);
 }
 
 .developerName{
-
-    color:white;
-
     font-size:17px;
-
     font-weight:bold;
-
 }
 
 .developerPhone{
-
     color:#89939e;
-
     margin-top:4px;
-
     font-size:14px;
-
 }
-
-
-/* =========================
-MOBILE
-========================= */
 
 @media(max-width:500px){
 
     body{
-
-        padding:8px;
-
+        padding:7px;
     }
 
     .header h1{
-
-        font-size:26px;
-
-    }
-
-    video{
-
-        min-height:280px;
-
+        font-size:25px;
     }
 
     .speedDisplay{
-
-        top:10px;
-
-        right:10px;
-
+        top:8px;
+        right:8px;
         min-width:105px;
-
     }
 
     .speedNumber{
-
-        font-size:28px;
-
+        font-size:27px;
     }
 
     button{
-
-        font-size:14px;
-
+        font-size:13px;
     }
-
 }
-
 </style>
-
 </head>
-
 
 <body>
 
-
-<!-- =========================
-HEADER
-========================= -->
-
 <div class="header">
-
-    <h1>
-        🚗 Speed Camera
-    </h1>
-
-    <p>
-        📷 AI Vehicle Detection & Speed Estimate
-    </p>
-
+    <h1>🚗 AI Speed Camera PRO</h1>
+    <p>Vehicle Detection • Speed Estimate • Number Plate OCR</p>
 </div>
-
-
-<!-- =========================
-CAMERA
-========================= -->
 
 <div class="cameraBox">
 
@@ -547,191 +297,99 @@ CAMERA
         playsinline>
     </video>
 
-    <canvas
-        id="canvas">
-    </canvas>
-
-
-    <!-- SPEED -->
+    <canvas id="canvas"></canvas>
 
     <div class="speedDisplay">
 
-        <div
-            id="speedNumber"
-            class="speedNumber">
-
+        <div id="speedNumber" class="speedNumber">
             0
-
         </div>
 
         <div class="speedUnit">
-
             KM/H
-
         </div>
 
-        <div
-            id="speedState"
-            class="speedState">
-
+        <div id="speedState" class="speedState">
             WAITING
-
         </div>
 
     </div>
 
 </div>
 
-
-<!-- =========================
-BUTTONS
-========================= -->
-
 <div class="controls">
 
-    <button
-        onclick="startCamera()">
-
+    <button onclick="startCamera()">
         📷 CAMERA ON
-
     </button>
 
-
-    <button
-        class="stop"
-        onclick="stopCamera()">
-
+    <button class="stop" onclick="stopCamera()">
         ⛔ CAMERA OFF
-
     </button>
 
 </div>
 
-
-<!-- =========================
-STATUS
-========================= -->
-
-<div
-    id="status"
-    class="status">
-
+<div id="status" class="status">
     🔴 Camera বন্ধ আছে
-
 </div>
-
-
-<!-- =========================
-SETTINGS
-========================= -->
 
 <div class="settings">
 
-    <h2>
-        ⚙️ Speed Settings
-    </h2>
-
+    <h2>⚙️ Speed Camera Settings</h2>
 
     <div class="row">
-
-        <span>
-            🚦 Speed Limit
-        </span>
-
+        <span>🚦 Speed Limit</span>
         <input
             id="speedLimit"
             type="number"
             value="60"
             min="1">
-
     </div>
 
-
     <div class="row">
-
-        <span>
-            📏 Line Distance (meter)
-        </span>
-
+        <span>📏 Line Distance (meter)</span>
         <input
             id="lineDistance"
             type="number"
             value="10"
             min="1"
-            step="0.5">
-
+            step=".5">
     </div>
 
-
     <div class="row">
-
-        <span>
-            🎯 Detection Confidence
-        </span>
-
+        <span>🎯 Confidence %</span>
         <input
             id="confidence"
             type="number"
             value="50"
             min="20"
             max="95">
-
     </div>
 
 </div>
 
+<div id="vehicleList" class="vehicleList">
 
-<!-- =========================
-VEHICLE INFORMATION
-========================= -->
-
-<div
-    id="vehicleInfo"
-    class="vehicleInfo">
-
-    🚗 Vehicle:
-    <b>Waiting...</b>
-
-    <br>
-
-    🎯 Detection:
-    <b>Waiting for camera</b>
-
-    <br>
-
-    ⏱️ Timer:
-    <b>0.00 sec</b>
+    <div class="vehicleCard">
+        🚗 কোনো vehicle detect হয়নি
+    </div>
 
 </div>
-
-
-<!-- =========================
-DEVELOPER
-========================= -->
 
 <div class="developer">
 
     <div class="developerName">
-
         👨‍💻 Developer: Maruf Hossain
-
     </div>
 
     <div class="developerPhone">
-
         📞 +8801892149781
-
     </div>
 
 </div>
 
 
-
 <script>
-
-/* =====================================================
-   VARIABLES
-===================================================== */
 
 const video =
 document.getElementById("video");
@@ -751,66 +409,64 @@ document.getElementById("speedNumber");
 const speedState =
 document.getElementById("speedState");
 
-const vehicleInfo =
-document.getElementById("vehicleInfo");
+const vehicleList =
+document.getElementById("vehicleList");
 
 
 let stream = null;
-
 let model = null;
-
 let running = false;
-
 let detecting = false;
+
+let nextVehicleID = 1;
+
+let vehicles = new Map();
+
+let lastPredictions = [];
+
+let ocrBusy = false;
 
 
 /*
-   Tracking information
+==================================================
+VEHICLE TYPES
+==================================================
 */
 
-let trackedVehicle = null;
-
-let previousCenter = null;
-
-let firstLineTime = null;
-
-let lastDetectionTime = 0;
-
-let lastPrediction = [];
+const vehicleClasses = [
+    "car",
+    "truck",
+    "bus",
+    "motorcycle"
+];
 
 
-/* =====================================================
-   START CAMERA
-===================================================== */
+/*
+==================================================
+START CAMERA
+==================================================
+*/
 
 async function startCamera(){
 
     try{
 
-        if(
-            !navigator.mediaDevices ||
-            !navigator.mediaDevices.getUserMedia
-        ){
+        if(!navigator.mediaDevices){
 
             statusBox.innerText =
             "❌ Browser camera support করে না";
 
             return;
-
         }
-
 
         statusBox.innerText =
         "🟡 Camera permission চাওয়া হচ্ছে...";
 
 
         stream =
-        await navigator
-        .mediaDevices
-        .getUserMedia({
+        await navigator.mediaDevices.getUserMedia({
 
             video:{
-
                 facingMode:{
                     ideal:"environment"
                 },
@@ -822,17 +478,13 @@ async function startCamera(){
                 height:{
                     ideal:720
                 }
-
             },
 
             audio:false
-
         });
 
 
-        video.srcObject =
-        stream;
-
+        video.srcObject = stream;
 
         await video.play();
 
@@ -848,25 +500,14 @@ async function startCamera(){
         "🟡 AI model loading হচ্ছে...";
 
 
-        /*
-           Load COCO-SSD
-        */
-
         model =
         await cocoSsd.load();
 
 
         running = true;
 
-
         statusBox.innerText =
-        "🟢 CAMERA + AI READY";
-
-
-        vehicleInfo.innerHTML =
-        "🚗 Vehicle: <b>Searching...</b>" +
-        "<br>🎯 Detection: <b>AI Active</b>" +
-        "<br>⏱️ Timer: <b>0.00 sec</b>";
+        "🟢 AI CAMERA READY";
 
 
         detectLoop();
@@ -877,48 +518,23 @@ async function startCamera(){
 
         console.error(error);
 
-
-        if(
-            error.name ===
-            "NotAllowedError"
-        ){
-
-            statusBox.innerText =
-            "❌ Camera Permission Allow করুন";
-
-        }
-
-        else if(
-            error.name ===
-            "NotReadableError"
-        ){
-
-            statusBox.innerText =
-            "❌ Camera অন্য App ব্যবহার করছে";
-
-        }
-
-        else{
-
-            statusBox.innerText =
-            "❌ Error: " +
-            error.message;
-
-        }
+        statusBox.innerText =
+        "❌ " + error.message;
 
     }
 
 }
 
 
-/* =====================================================
-   STOP CAMERA
-===================================================== */
+/*
+==================================================
+STOP CAMERA
+==================================================
+*/
 
 function stopCamera(){
 
     running = false;
-
 
     if(stream){
 
@@ -929,13 +545,13 @@ function stopCamera(){
         );
 
         stream = null;
-
     }
 
+    video.srcObject = null;
 
-    video.srcObject =
-    null;
+    vehicles.clear();
 
+    lastPredictions = [];
 
     ctx.clearRect(
         0,
@@ -944,36 +560,26 @@ function stopCamera(){
         canvas.height
     );
 
+    speedNumber.innerText = "0";
 
-    trackedVehicle = null;
-
-    previousCenter = null;
-
-    firstLineTime = null;
-
-
-    speedNumber.innerText =
-    "0";
-
-    speedState.innerText =
-    "WAITING";
-
+    speedState.innerText = "WAITING";
 
     statusBox.innerText =
     "🔴 Camera বন্ধ আছে";
 
-
-    vehicleInfo.innerHTML =
-    "🚗 Vehicle: <b>Waiting...</b>" +
-    "<br>🎯 Detection: <b>Camera Off</b>" +
-    "<br>⏱️ Timer: <b>0.00 sec</b>";
+    vehicleList.innerHTML =
+    `<div class="vehicleCard">
+        🚗 Camera বন্ধ
+    </div>`;
 
 }
 
 
-/* =====================================================
-   DETECTION LOOP
-===================================================== */
+/*
+==================================================
+DETECTION LOOP
+==================================================
+*/
 
 async function detectLoop(){
 
@@ -988,16 +594,13 @@ async function detectLoop(){
 
         detecting = true;
 
-
         try{
 
             const predictions =
-            await model.detect(
-                video
-            );
+            await model.detect(video);
 
 
-            lastPrediction =
+            lastPredictions =
             predictions;
 
 
@@ -1006,18 +609,13 @@ async function detectLoop(){
             );
 
         }
-
         catch(error){
 
-            console.error(
-                error
-            );
+            console.error(error);
 
         }
 
-
         detecting = false;
-
     }
 
 
@@ -1027,19 +625,18 @@ async function detectLoop(){
     requestAnimationFrame(
         detectLoop
     );
-
 }
 
 
-/* =====================================================
-   PROCESS VEHICLES
-===================================================== */
+/*
+==================================================
+PROCESS VEHICLES
+==================================================
+*/
 
-function processVehicles(
-    predictions
-){
+function processVehicles(predictions){
 
-    const confidenceLimit =
+    const confidence =
     Number(
         document.getElementById(
             "confidence"
@@ -1047,322 +644,483 @@ function processVehicles(
     ) / 100;
 
 
-    /*
-       Objects considered vehicles
-    */
-
-    const vehicleClasses = [
-
-        "car",
-
-        "truck",
-
-        "bus",
-
-        "motorcycle"
-
-    ];
-
-
-    const vehicles =
+    const detected =
     predictions.filter(
-        item =>
+        p =>
         vehicleClasses.includes(
-            item.class
-        )
-        &&
-        item.score >=
-        confidenceLimit
+            p.class
+        ) &&
+        p.score >= confidence
     );
-
-
-    if(
-        vehicles.length === 0
-    ){
-
-        trackedVehicle = null;
-
-        vehicleInfo.innerHTML =
-        "🚗 Vehicle: <b>None detected</b>" +
-        "<br>🎯 Detection: <b>Searching...</b>" +
-        "<br>⏱️ Timer: <b>0.00 sec</b>";
-
-        return;
-
-    }
-
-
-    /*
-       Select largest vehicle
-       because nearby vehicle
-       usually has larger box.
-    */
-
-    let vehicle =
-    vehicles.sort(
-        (a,b) =>
-        (
-            b.bbox[2] *
-            b.bbox[3]
-        )
-        -
-        (
-            a.bbox[2] *
-            a.bbox[3]
-        )
-    )[0];
-
-
-    const x =
-    vehicle.bbox[0];
-
-    const y =
-    vehicle.bbox[1];
-
-    const w =
-    vehicle.bbox[2];
-
-    const h =
-    vehicle.bbox[3];
-
-
-    const centerX =
-    x + w / 2;
-
-    const centerY =
-    y + h / 2;
 
 
     const now =
     performance.now();
 
 
+    const usedIDs =
+    new Set();
+
+
+    detected.forEach(
+        detection => {
+
+            const [
+                x,
+                y,
+                w,
+                h
+            ] = detection.bbox;
+
+
+            const cx =
+            x + w / 2;
+
+            const cy =
+            y + h / 2;
+
+
+            /*
+            Find closest existing vehicle
+            */
+
+            let bestID = null;
+
+            let bestDistance =
+            Infinity;
+
+
+            vehicles.forEach(
+                (v,id) => {
+
+                    if(
+                        usedIDs.has(id)
+                    )
+                        return;
+
+
+                    if(
+                        v.class !==
+                        detection.class
+                    )
+                        return;
+
+
+                    const dx =
+                    cx - v.cx;
+
+                    const dy =
+                    cy - v.cy;
+
+
+                    const distance =
+                    Math.sqrt(
+                        dx*dx +
+                        dy*dy
+                    );
+
+
+                    const threshold =
+                    Math.max(
+                        w,
+                        h
+                    ) * 0.8;
+
+
+                    if(
+                        distance <
+                        threshold &&
+                        distance <
+                        bestDistance
+                    ){
+
+                        bestDistance =
+                        distance;
+
+                        bestID = id;
+
+                    }
+
+                }
+            );
+
+
+            /*
+            New vehicle
+            */
+
+            if(bestID === null){
+
+                bestID =
+                nextVehicleID++;
+
+
+                vehicles.set(
+                    bestID,
+                    {
+
+                        id:bestID,
+
+                        class:
+                        detection.class,
+
+                        score:
+                        detection.score,
+
+                        x,
+                        y,
+                        w,
+                        h,
+
+                        cx,
+                        cy,
+
+                        lastTime:
+                        now,
+
+                        firstLine:false,
+
+                        firstTime:null,
+
+                        speed:0,
+
+                        plate:"Reading..."
+
+                    }
+                );
+
+            }
+
+            else{
+
+                const v =
+                vehicles.get(
+                    bestID
+                );
+
+
+                /*
+                Update speed tracking
+                */
+
+                const oldY =
+                v.cy;
+
+                const oldTime =
+                v.lastTime;
+
+
+                v.x = x;
+                v.y = y;
+                v.w = w;
+                v.h = h;
+
+                v.cx = cx;
+                v.cy = cy;
+
+                v.score =
+                detection.score;
+
+
+                v.lastTime =
+                now;
+
+
+                /*
+                Speed lines
+                */
+
+                const line1 =
+                canvas.height * .52;
+
+                const line2 =
+                canvas.height * .72;
+
+
+                /*
+                First line
+                */
+
+                if(
+                    oldY < line1 &&
+                    cy >= line1 &&
+                    !v.firstLine
+                ){
+
+                    v.firstLine = true;
+
+                    v.firstTime = now;
+
+                }
+
+
+                /*
+                Finish line
+                */
+
+                if(
+                    v.firstLine &&
+                    oldY < line2 &&
+                    cy >= line2
+                ){
+
+                    const elapsed =
+                    (
+                        now -
+                        v.firstTime
+                    ) / 1000;
+
+
+                    const distance =
+                    Number(
+                        document.getElementById(
+                            "lineDistance"
+                        ).value
+                    );
+
+
+                    if(
+                        elapsed > 0 &&
+                        distance > 0
+                    ){
+
+                        v.speed =
+                        Math.round(
+                            (
+                                distance /
+                                elapsed
+                            ) * 3.6
+                        );
+
+                    }
+
+
+                    v.firstLine = false;
+
+                    v.firstTime = null;
+
+
+                    /*
+                    OCR
+                    */
+
+                    readNumberPlate(
+                        v
+                    );
+
+                }
+
+            }
+
+
+            usedIDs.add(bestID);
+
+        }
+    );
+
+
     /*
-       First detection
+    Remove vehicles that disappeared
     */
 
-    if(
-        !trackedVehicle
-    ){
+    vehicles.forEach(
+        (v,id) => {
 
-        trackedVehicle = {
+            if(
+                now -
+                v.lastTime >
+                2500
+            ){
 
-            class:
-            vehicle.class,
+                vehicles.delete(id);
 
-            x,
-            y,
-            w,
-            h,
+            }
 
-            centerX,
-            centerY
-
-        };
-
-        previousCenter = {
-
-            x:centerX,
-
-            y:centerY,
-
-            time:now
-
-        };
-
-        return;
-
-    }
+        }
+    );
 
 
-    /*
-       Update tracking
-    */
-
-    const oldY =
-    trackedVehicle.centerY;
-
-
-    trackedVehicle = {
-
-        class:
-        vehicle.class,
-
-        x,
-        y,
-        w,
-        h,
-
-        centerX,
-        centerY
-
-    };
-
-
-    /*
-       Speed lines
-    */
-
-    const line1 =
-    canvas.height * 0.52;
-
-    const line2 =
-    canvas.height * 0.72;
-
-
-    /*
-       Detect movement direction
-    */
-
-    if(
-        oldY < line1 &&
-        centerY >= line1 &&
-        !firstLineTime
-    ){
-
-        firstLineTime =
-        performance.now();
-
-
-        speedState.innerText =
-        "⏱️ TIMING";
-
-
-        speedState.style.color =
-        "#00eaff";
-
-    }
-
-
-    /*
-       Second line crossed
-    */
-
-    if(
-        firstLineTime &&
-        oldY < line2 &&
-        centerY >= line2
-    ){
-
-        const secondTime =
-        performance.now();
-
-
-        const elapsed =
-        (
-            secondTime -
-            firstLineTime
-        ) / 1000;
-
-
-        calculateSpeed(
-            elapsed
-        );
-
-
-        /*
-           Reset after result
-        */
-
-        firstLineTime =
-        null;
-
-    }
-
-
-    /*
-       Information
-    */
-
-    let timerText =
-    "0.00 sec";
-
-
-    if(firstLineTime){
-
-        timerText =
-        (
-            (
-                performance.now() -
-                firstLineTime
-            ) / 1000
-        ).toFixed(2)
-        +
-        " sec";
-
-    }
-
-
-    vehicleInfo.innerHTML =
-
-    "🚗 Vehicle: <b>" +
-    vehicle.class +
-    "</b>" +
-
-    "<br>🎯 Confidence: <b>" +
-    (
-        vehicle.score * 100
-    ).toFixed(0) +
-    "%</b>" +
-
-    "<br>⏱️ Timer: <b>" +
-    timerText +
-    "</b>";
+    updateVehicleList();
 
 }
 
 
-/* =====================================================
-   CALCULATE SPEED
-===================================================== */
+/*
+==================================================
+NUMBER PLATE OCR
+==================================================
+*/
 
-function calculateSpeed(
-    elapsed
-){
+async function readNumberPlate(vehicle){
 
-    const distance =
-    Number(
-        document.getElementById(
-            "lineDistance"
-        ).value
+    if(ocrBusy)
+        return;
+
+
+    /*
+    Crop vehicle area
+    */
+
+    const temp =
+    document.createElement(
+        "canvas"
     );
 
 
-    if(
-        !distance ||
-        distance <= 0 ||
-        elapsed <= 0
-    ){
+    const scale = 1;
 
-        return;
+
+    temp.width =
+    Math.max(
+        100,
+        Math.floor(
+            vehicle.w * scale
+        )
+    );
+
+
+    temp.height =
+    Math.max(
+        60,
+        Math.floor(
+            vehicle.h * scale
+        )
+    );
+
+
+    const tctx =
+    temp.getContext("2d");
+
+
+    tctx.drawImage(
+        video,
+
+        vehicle.x,
+        vehicle.y,
+        vehicle.w,
+        vehicle.h,
+
+        0,
+        0,
+        temp.width,
+        temp.height
+    );
+
+
+    ocrBusy = true;
+
+
+    try{
+
+        const result =
+        await Tesseract.recognize(
+
+            temp,
+
+            "eng",
+
+            {
+
+                logger:
+                function(info){
+
+                    if(
+                        info.status ===
+                        "recognizing text"
+                    ){
+
+                        vehicle.plate =
+                        "OCR " +
+                        Math.round(
+                            info.progress *
+                            100
+                        ) +
+                        "%";
+
+                        updateVehicleList();
+
+                    }
+
+                }
+
+            }
+
+        );
+
+
+        let text =
+        result.data.text
+        .toUpperCase();
+
+
+        /*
+        Keep numbers,
+        English letters and
+        Bangladesh plate characters.
+        */
+
+        text =
+        text
+        .replace(
+            /[^A-Z0-9\u0980-\u09FF\s-]/g,
+            ""
+        )
+        .replace(
+            /\s+/g,
+            " "
+        )
+        .trim();
+
+
+        if(text.length > 1){
+
+            vehicle.plate =
+            text;
+
+        }
+        else{
+
+            vehicle.plate =
+            "Plate not clear";
+
+        }
+
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        vehicle.plate =
+        "OCR failed";
 
     }
 
 
-    /*
-       m/s to km/h
+    ocrBusy = false;
 
-       speed =
-       distance / time
+    updateVehicleList();
 
-       then × 3.6
-    */
-
-    const speed =
-    (
-        distance /
-        elapsed
-    ) * 3.6;
+}
 
 
-    const finalSpeed =
-    Math.round(
-        speed
-    );
+/*
+==================================================
+VEHICLE LIST
+==================================================
+*/
 
+function updateVehicleList(){
 
-    speedNumber.innerText =
-    finalSpeed;
+    if(vehicles.size === 0){
+
+        vehicleList.innerHTML =
+        `<div class="vehicleCard">
+            🚗 কোনো vehicle detect হয়নি
+        </div>`;
+
+        return;
+    }
 
 
     const limit =
@@ -1373,43 +1131,124 @@ function calculateSpeed(
     );
 
 
-    if(
-        finalSpeed >
-        limit
-    ){
-
-        speedState.innerText =
-        "🔴 OVERSPEED";
-
-        speedState.style.color =
-        "#ff304f";
+    let html = "";
 
 
-        speedNumber.style.color =
-        "#ff304f";
+    vehicles.forEach(
+        v => {
 
-    }
-
-    else{
-
-        speedState.innerText =
-        "🟢 SAFE";
-
-        speedState.style.color =
-        "#00ff88";
+            const over =
+            v.speed > limit;
 
 
-        speedNumber.style.color =
-        "#00ff88";
+            const icon =
+            getVehicleIcon(
+                v.class
+            );
 
-    }
+
+            html += `
+
+            <div class="vehicleCard
+                ${over ? "overspeed" : ""}">
+
+                <div class="vehicleTitle">
+
+                    <div class="vehicleName">
+
+                        ${icon}
+                        Vehicle #${v.id}
+                        ${v.class.toUpperCase()}
+
+                    </div>
+
+                    <div class="vehicleSpeed">
+
+                        ${v.speed || 0}
+                        KM/H
+
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    🎯 Confidence:
+                    <b>
+                        ${(v.score*100).toFixed(0)}%
+                    </b>
+
+                </div>
+
+
+                <div>
+
+                    📍 Status:
+                    <b>
+                        ${
+                            over
+                            ? "🔴 OVERSPEED"
+                            : "🟢 SAFE"
+                        }
+                    </b>
+
+                </div>
+
+
+                <div class="plate">
+
+                    🔢 Number Plate:
+                    ${
+                        v.plate ||
+                        "Reading..."
+                    }
+
+                </div>
+
+            </div>
+
+            `;
+
+        }
+    );
+
+
+    vehicleList.innerHTML =
+    html;
 
 }
 
 
-/* =====================================================
-   DRAW INTERFACE
-===================================================== */
+/*
+==================================================
+VEHICLE ICON
+==================================================
+*/
+
+function getVehicleIcon(type){
+
+    if(type === "car")
+        return "🚗";
+
+    if(type === "motorcycle")
+        return "🏍️";
+
+    if(type === "bus")
+        return "🚌";
+
+    if(type === "truck")
+        return "🚚";
+
+    return "🚘";
+}
+
+
+/*
+==================================================
+DRAW CAMERA UI
+==================================================
+*/
 
 function drawInterface(){
 
@@ -1433,36 +1272,39 @@ function drawInterface(){
 
 
     /*
-       Speed lines
+    START LINE
     */
 
     const line1 =
-    H * 0.52;
-
-    const line2 =
-    H * 0.72;
+    H * .52;
 
 
     /*
-       First line
+    FINISH LINE
+    */
+
+    const line2 =
+    H * .72;
+
+
+    /*
+    Start line
     */
 
     ctx.strokeStyle =
     "#00ff88";
 
-    ctx.lineWidth =
-    4;
-
+    ctx.lineWidth = 4;
 
     ctx.beginPath();
 
     ctx.moveTo(
-        W * 0.05,
+        W*.03,
         line1
     );
 
     ctx.lineTo(
-        W * 0.95,
+        W*.97,
         line1
     );
 
@@ -1470,22 +1312,21 @@ function drawInterface(){
 
 
     /*
-       Second line
+    Finish line
     */
 
     ctx.strokeStyle =
     "#00eaff";
 
-
     ctx.beginPath();
 
     ctx.moveTo(
-        W * 0.05,
+        W*.03,
         line2
     );
 
     ctx.lineTo(
-        W * 0.95,
+        W*.97,
         line2
     );
 
@@ -1493,145 +1334,96 @@ function drawInterface(){
 
 
     /*
-       Line labels
+    Labels
     */
-
-    ctx.fillStyle =
-    "rgba(0,0,0,.72)";
-
-
-    ctx.fillRect(
-        W * 0.05,
-        line1 - 35,
-        180,
-        30
-    );
-
-
-    ctx.fillRect(
-        W * 0.05,
-        line2 - 35,
-        180,
-        30
-    );
-
-
-    ctx.fillStyle =
-    "#00ff88";
-
 
     ctx.font =
     "bold 14px Arial";
 
 
+    ctx.fillStyle =
+    "#00ff88";
+
     ctx.fillText(
         "START LINE",
-        W * 0.05 + 10,
-        line1 - 15
+        15,
+        line1 - 10
     );
 
 
     ctx.fillStyle =
     "#00eaff";
 
-
     ctx.fillText(
         "FINISH LINE",
-        W * 0.05 + 10,
-        line2 - 15
+        15,
+        line2 - 10
     );
 
 
     /*
-       Draw detected vehicles
+    Vehicle boxes
     */
 
-    const confidenceLimit =
-    Number(
-        document.getElementById(
-            "confidence"
-        ).value
-    ) / 100;
-
-
-    const vehicleClasses = [
-
-        "car",
-        "truck",
-        "bus",
-        "motorcycle"
-
-    ];
-
-
-    const vehicles =
-    lastPrediction.filter(
-        item =>
-        vehicleClasses.includes(
-            item.class
-        )
-        &&
-        item.score >=
-        confidenceLimit
-    );
-
-
     vehicles.forEach(
-        vehicle => {
+        v => {
 
-            const [
-                x,
-                y,
-                w,
-                h
-            ] =
-            vehicle.bbox;
+            const limit =
+            Number(
+                document.getElementById(
+                    "speedLimit"
+                ).value
+            );
 
 
-            /*
-               Box
-            */
+            const over =
+            v.speed > limit;
+
 
             ctx.strokeStyle =
-            "#00ff88";
+            over
+            ? "#ff304f"
+            : "#00ff88";
 
-            ctx.lineWidth =
-            4;
+
+            ctx.lineWidth = 4;
 
 
             ctx.strokeRect(
-                x,
-                y,
-                w,
-                h
+                v.x,
+                v.y,
+                v.w,
+                v.h
             );
 
 
             /*
-               Label background
+            Label background
             */
 
             ctx.fillStyle =
-            "rgba(0,0,0,.75)";
+            "rgba(0,0,0,.8)";
 
 
             ctx.fillRect(
-                x,
+                v.x,
                 Math.max(
                     0,
-                    y - 30
+                    v.y-52
                 ),
-                180,
-                30
+                220,
+                48
             );
 
 
             /*
-               Label
+            Label
             */
 
             ctx.fillStyle =
-            "#00ff88";
+            over
+            ? "#ff304f"
+            : "#00ff88";
 
 
             ctx.font =
@@ -1640,23 +1432,30 @@ function drawInterface(){
 
             ctx.fillText(
 
-                vehicle.class
-                .toUpperCase()
-                +
-                " "
-                +
-                (
-                    vehicle.score *
-                    100
-                ).toFixed(0)
-                +
-                "%",
+                "#" +
+                v.id +
+                " " +
+                v.class.toUpperCase(),
 
-                x + 8,
-
+                v.x + 7,
                 Math.max(
-                    20,
-                    y - 10
+                    17,
+                    v.y - 32
+                )
+
+            );
+
+
+            ctx.fillText(
+
+                "SPEED: " +
+                (v.speed || 0) +
+                " KM/H",
+
+                v.x + 7,
+                Math.max(
+                    35,
+                    v.y - 13
                 )
 
             );
@@ -1666,17 +1465,16 @@ function drawInterface(){
 
 
     /*
-       Camera indicator
+    AI indicator
     */
 
     ctx.fillStyle =
     "rgba(0,0,0,.75)";
 
-
     ctx.fillRect(
         10,
         10,
-        160,
+        175,
         35
     );
 
@@ -1684,10 +1482,8 @@ function drawInterface(){
     ctx.fillStyle =
     "#00ff88";
 
-
     ctx.font =
     "bold 14px Arial";
-
 
     ctx.fillText(
         "● AI CAMERA LIVE",
@@ -1698,28 +1494,26 @@ function drawInterface(){
 }
 
 
-/* =====================================================
-   PAGE HIDDEN
-===================================================== */
+/*
+==================================================
+PAGE HIDDEN
+==================================================
+*/
 
 document.addEventListener(
     "visibilitychange",
     function(){
 
-        if(
-            document.hidden &&
-            running
-        ){
-
-            stopCamera();
-
-        }
+        /*
+        এখানে camera বন্ধ করছি না,
+        যাতে screen lock/visibility
+        পরিবর্তনে state নষ্ট না হয়।
+        */
 
     }
 );
 
 </script>
 
-
 </body>
-</html>
+      </html>
